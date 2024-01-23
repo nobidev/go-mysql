@@ -12,9 +12,9 @@ import (
 
 	"github.com/pingcap/errors"
 
-	. "github.com/go-mysql-org/go-mysql/mysql"
-	"github.com/go-mysql-org/go-mysql/packet"
-	"github.com/go-mysql-org/go-mysql/utils"
+	. "github.com/nobidev/go-mysql/mysql"
+	"github.com/nobidev/go-mysql/packet"
+	"github.com/nobidev/go-mysql/utils"
 )
 
 type Conn struct {

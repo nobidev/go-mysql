@@ -12,8 +12,8 @@ import (
 	"github.com/siddontang/go-log/log"
 	"github.com/siddontang/go-log/loggers"
 
-	"github.com/go-mysql-org/go-mysql/client"
-	"github.com/go-mysql-org/go-mysql/mysql"
+	"github.com/nobidev/go-mysql/client"
+	"github.com/nobidev/go-mysql/mysql"
 )
 
 type DumpConfig struct {

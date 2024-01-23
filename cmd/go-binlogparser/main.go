@@ -4,7 +4,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/go-mysql-org/go-mysql/replication"
+	"github.com/nobidev/go-mysql/replication"
 )
 
 var (

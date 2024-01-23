@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-mysql-org/go-mysql/mysql"
+	"github.com/nobidev/go-mysql/mysql"
 )
 
 func (t *testSyncerSuite) TestStartBackupEndInGivenTime() {

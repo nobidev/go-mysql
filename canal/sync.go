@@ -4,9 +4,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-mysql-org/go-mysql/mysql"
-	"github.com/go-mysql-org/go-mysql/replication"
-	"github.com/go-mysql-org/go-mysql/schema"
+	"github.com/nobidev/go-mysql/mysql"
+	"github.com/nobidev/go-mysql/replication"
+	"github.com/nobidev/go-mysql/schema"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/pkg/parser/ast"
 )
