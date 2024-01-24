@@ -144,7 +144,10 @@ func (c *Canal) runSyncBinlog() error {
 					if node.db == "" {
 						node.db = string(e.Schema)
 					}
-					if err = c.updateTable(ev.Header, node.db, node.table); err != nil {
+					if isSystemSchema(node.db) {
+						continue
+					}
+					if err = c.updateTable(ev.Header, node.action, node.db, node.table); err != nil {
 						return errors.Trace(err)
 					}
 				}
@@ -176,8 +179,9 @@ func (c *Canal) runSyncBinlog() error {
 }
 
 type node struct {
-	db    string
-	table string
+	db     string
+	table  string
+	action string
 }
 
 func parseStmt(stmt ast.StmtNode) (ns []*node) {
@@ -185,57 +189,78 @@ func parseStmt(stmt ast.StmtNode) (ns []*node) {
 	case *ast.RenameTableStmt:
 		for _, tableInfo := range t.TableToTables {
 			n := &node{
-				db:    tableInfo.OldTable.Schema.String(),
-				table: tableInfo.OldTable.Name.String(),
+				db:     tableInfo.OldTable.Schema.String(),
+				table:  tableInfo.OldTable.Name.String(),
+				action: "rename",
 			}
 			ns = append(ns, n)
 		}
 	case *ast.AlterTableStmt:
 		n := &node{
-			db:    t.Table.Schema.String(),
-			table: t.Table.Name.String(),
+			db:     t.Table.Schema.String(),
+			table:  t.Table.Name.String(),
+			action: "alter",
 		}
 		ns = []*node{n}
 	case *ast.DropTableStmt:
 		for _, table := range t.Tables {
 			n := &node{
-				db:    table.Schema.String(),
-				table: table.Name.String(),
+				db:     table.Schema.String(),
+				table:  table.Name.String(),
+				action: "drop",
 			}
 			ns = append(ns, n)
 		}
 	case *ast.CreateTableStmt:
 		n := &node{
-			db:    t.Table.Schema.String(),
-			table: t.Table.Name.String(),
+			db:     t.Table.Schema.String(),
+			table:  t.Table.Name.String(),
+			action: "create",
 		}
 		ns = []*node{n}
 	case *ast.TruncateTableStmt:
 		n := &node{
-			db:    t.Table.Schema.String(),
-			table: t.Table.Name.String(),
+			db:     t.Table.Schema.String(),
+			table:  t.Table.Name.String(),
+			action: "truncate",
 		}
 		ns = []*node{n}
 	case *ast.CreateIndexStmt:
 		n := &node{
-			db:    t.Table.Schema.String(),
-			table: t.Table.Name.String(),
+			db:     t.Table.Schema.String(),
+			table:  t.Table.Name.String(),
+			action: "create_index",
 		}
 		ns = []*node{n}
 	case *ast.DropIndexStmt:
 		n := &node{
-			db:    t.Table.Schema.String(),
-			table: t.Table.Name.String(),
+			db:     t.Table.Schema.String(),
+			table:  t.Table.Name.String(),
+			action: "drop_index",
 		}
 		ns = []*node{n}
 	}
 	return ns
 }
 
-func (c *Canal) updateTable(header *replication.EventHeader, db, table string) (err error) {
+func (c *Canal) updateTable(header *replication.EventHeader, action, db, table string) (err error) {
 	c.ClearTableCache([]byte(db), []byte(table))
 	c.cfg.Logger.Infof("table structure changed, clear table cache: %s.%s\n", db, table)
-	if err = c.eventHandler.OnTableChanged(header, db, table); err != nil && errors.Cause(err) != schema.ErrTableNotExist {
+	t, err := c.GetTable(db, table)
+	if err != nil {
+		return errors.Trace(err)
+	}
+	switch action {
+	case "create":
+		err = c.eventHandler.OnTableCreated(header, t)
+	case "drop":
+		err = c.eventHandler.OnTableDropped(header, t)
+	case "truncate":
+		err = c.eventHandler.OnTableTruncated(header, t)
+	default:
+		err = c.eventHandler.OnTableChanged(header, t)
+	}
+	if err != nil && errors.Cause(err) != schema.ErrTableNotExist {
 		return errors.Trace(err)
 	}
 	return

@@ -3,6 +3,7 @@ package canal
 import (
 	"github.com/nobidev/go-mysql/mysql"
 	"github.com/nobidev/go-mysql/replication"
+	"github.com/nobidev/go-mysql/schema"
 )
 
 type EventHandler interface {
@@ -10,7 +11,10 @@ type EventHandler interface {
 	// OnTableChanged is called when the table is created, altered, renamed or dropped.
 	// You need to clear the associated data like cache with the table.
 	// It will be called before OnDDL.
-	OnTableChanged(header *replication.EventHeader, schema string, table string) error
+	OnTableCreated(header *replication.EventHeader, table *schema.Table) error
+	OnTableDropped(header *replication.EventHeader, table *schema.Table) error
+	OnTableTruncated(header *replication.EventHeader, table *schema.Table) error
+	OnTableChanged(header *replication.EventHeader, table *schema.Table) error
 	OnDDL(header *replication.EventHeader, nextPos mysql.Position, queryEvent *replication.QueryEvent) error
 	OnRow(e *RowsEvent) error
 	OnXID(header *replication.EventHeader, nextPos mysql.Position) error
@@ -30,7 +34,16 @@ type DummyEventHandler struct {
 func (h *DummyEventHandler) OnRotate(*replication.EventHeader, *replication.RotateEvent) error {
 	return nil
 }
-func (h *DummyEventHandler) OnTableChanged(*replication.EventHeader, string, string) error {
+func (h *DummyEventHandler) OnTableCreated(*replication.EventHeader, *schema.Table) error {
+	return nil
+}
+func (h *DummyEventHandler) OnTableDropped(*replication.EventHeader, *schema.Table) error {
+	return nil
+}
+func (h *DummyEventHandler) OnTableTruncated(*replication.EventHeader, *schema.Table) error {
+	return nil
+}
+func (h *DummyEventHandler) OnTableChanged(*replication.EventHeader, *schema.Table) error {
 	return nil
 }
 func (h *DummyEventHandler) OnDDL(*replication.EventHeader, mysql.Position, *replication.QueryEvent) error {
